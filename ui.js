@@ -48,9 +48,19 @@ function renderActivityTable() {
   `).join("");
 }
 
+// Clears any previous evaluation output. Called whenever an input changes,
+// so results and counts never sit on screen next to edited inputs, and on
+// reset. Single definition of "no results are currently shown".
+function clearOutput() {
+  renderErrors([]);
+  renderSummary(null);
+  renderResults(null);
+}
+
 // Rebuilds the participant table from the current `participants` array.
 // Each input edits `participants` directly, so Evaluate/Reset always read
-// whatever is currently on screen.
+// whatever is currently on screen. Any edit also clears the previous
+// evaluation, because that result no longer matches the inputs.
 function renderParticipantTable() {
   const tbody = document.getElementById("participant-tbody");
   tbody.innerHTML = "";
@@ -66,6 +76,7 @@ function renderParticipantTable() {
     idInput.setAttribute("aria-label", `Participant ${index + 1} ID`);
     idInput.addEventListener("input", () => {
       participants[index].id = idInput.value;
+      clearOutput();
     });
     idCell.appendChild(idInput);
 
@@ -77,6 +88,7 @@ function renderParticipantTable() {
     nameInput.setAttribute("aria-label", `Participant ${index + 1} name`);
     nameInput.addEventListener("input", () => {
       participants[index].name = nameInput.value;
+      clearOutput();
     });
     nameCell.appendChild(nameInput);
 
@@ -88,6 +100,7 @@ function renderParticipantTable() {
     activitiesInput.setAttribute("aria-label", `Participant ${index + 1} completed activities`);
     activitiesInput.addEventListener("input", () => {
       participants[index].completedActivityIds = parseActivityIdsInput(activitiesInput.value);
+      clearOutput();
     });
     activitiesCell.appendChild(activitiesInput);
 
@@ -189,10 +202,26 @@ function renderResults(results) {
 
 // --- Actions -------------------------------------------------------------
 
+// Normalizes the current participant list in place before it is validated or
+// evaluated. The contract requires participant and activity IDs to be
+// trimmed; activity IDs are already trimmed by parseActivityIdsInput, so this
+// only has to handle the ID and name fields. Trimming here rather than on
+// every keystroke means the user can still type spaces inside a name.
+function trimParticipants() {
+  participants.forEach((participant) => {
+    participant.id = (participant.id ?? "").trim();
+    participant.name = (participant.name ?? "").trim();
+  });
+}
+
 function evaluateAll() {
+  trimParticipants();
+  renderParticipantTable(); // reflect the trimmed values back into the inputs
+
   const errors = validateParticipants(participants, ACTIVITIES);
 
   if (errors.length > 0) {
+    // Any input error clears result rows and counts from an earlier run.
     renderErrors(errors);
     renderSummary(null);
     renderResults(null);
@@ -209,9 +238,7 @@ function evaluateAll() {
 function resetAll() {
   participants = cloneParticipants(DEFAULT_PARTICIPANTS);
   renderParticipantTable();
-  renderErrors([]);
-  renderSummary(null);
-  renderResults(null);
+  clearOutput();
 }
 
 // --- Wire up ---------------------------------------------------------
@@ -220,4 +247,4 @@ document.getElementById("evaluate-btn").addEventListener("click", evaluateAll);
 document.getElementById("reset-btn").addEventListener("click", resetAll);
 
 renderActivityTable();
-resetAll(); 
+resetAll();

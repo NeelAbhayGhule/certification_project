@@ -1,23 +1,64 @@
-I'm building a College Event Certificate Eligibility Board as a single-page app — plain HTML and vanilla JavaScript, no frameworks, no backend, loaded with plain <script> tags so it opens by double-clicking.
-Here's the problem statement: [paste the full P12 PDF text]
-Don't write any UI or logic yet. Just give me data.js containing the fixed activity table and the five default participants as plain constants. Keep it simple and readable.
+# AI Interaction Log — P12 Certificate Eligibility Board
 
-Now write `eligibility.js`. It should export a function that takes one participant and the activity list, and returns their total points, the set of categories they covered, whether they're eligible, and their failure reasons.
-Rules: eligible requires all three categories (LEARN, BUILD, SHARE) and points >= PASS_MARK. Evaluate both requirements fully — don't stop at the first failure. Failure reasons must be in this exact order: `MISSING_CATEGORY: LEARN`, `MISSING_CATEGORY: BUILD`, `MISSING_CATEGORY: SHARE`, then `POINTS_BELOW_6` if applicable. An eligible participant has no reasons.
-Also write a function that sorts results: eligible first, then ineligible, each group sorted by participant ID ascending.
-No UI, no validation yet. Use the constants from `data.js`.
+## Approach
+I deliberately built this in stages rather than asking for the whole app
+at once, so I could verify each layer before moving on. Logic first, UI
+last — all the contract rules live in the logic, and they're much easier
+to test in the console than through a half-built screen.
 
-Now write validation.js. It takes the participant list and the activity list, and returns an array of errors. Four checks:
+Tool used: Claude.
 
-INVALID_PARTICIPANT — empty ID or name after trimming
-DUPLICATE_PARTICIPANT_ID — two participants share an ID
-UNKNOWN_ACTIVITY — an activity ID not in the fixed table
-DUPLICATE_PARTICIPATION — the same activity listed twice for one participant
-Each error must name the participant and the offending value. Trim all IDs and names before comparing. No UI. Use the constants from data.js — don't redeclare them.
-i Have kept the pass_mark and categories in data.js btw
+---
 
-Now write index.html and ui.js — one attractive screen, plain CSS in a <style> tag, no frameworks.
-Layout: a read-only activity table (ID, name, category, points); an editable participant table where ID and name are text inputs and completed activities is a comma-separated text input; an Evaluate button and a Reset button; an error area; a results area showing eligible participants first then ineligible, each with total points, categories covered, and failure reasons; and a summary showing counts of eligible and ineligible.
-On Evaluate: run validateParticipants first. If there are errors, show them and clear all results and counts, and do not evaluate. Otherwise run evaluateParticipant on each and sortResults.
-On Reset: deep-clone DEFAULT_PARTICIPANTS, clear errors, clear results and counts.
-Use the existing functions and constants — don't redeclare anything.
+## Stage 1 — Data structures
+[prompt]
+
+**Outcome:** Got the activity and participant constants.
+**My change:** The generated file had no constant for the category order
+or the pass mark. Since failure reasons must always be listed
+LEARN → BUILD → SHARE, I added REQUIRED_CATEGORIES so the ordering comes
+from data rather than being hardcoded in the logic, and PASS_MARK so the
+threshold lives in one place.
+
+---
+
+## Stage 2 — Eligibility logic
+[prompt]
+
+**Constraint I added:** "Evaluate both requirements fully — don't stop at
+the first failure." Without this the model would likely have returned early
+on the first missing category, which breaks C05 (needs both a missing
+category and the points reason).
+
+**Verified against the built-in oracle:** totals came out 7, 6, 7, 7, 4
+with C01 and C02 eligible, matching the problem statement exactly.
+
+**Issue found:** PASS_MARK was declared in both data.js and eligibility.js.
+With plain script tags all files share one global scope, so a duplicate
+const is a SyntaxError and the whole page fails to render. Fixed by making
+data.js the single source of truth for constants.
+
+---
+
+## Stage 3 — Validation
+[prompt]
+
+**Design decision:** Validation is a separate module from evaluation, and
+it gates it — if validation fails, evaluation never runs. This matters
+because evaluateParticipant trusts its input: I tested a duplicate A01 and
+it silently returned 9 points instead of erroring. Keeping the gate means
+bad data can't reach the evaluator.
+
+---
+
+## Stage 4 — UI
+[prompt]
+
+**Iteration:** The first version left previous results on screen after
+editing an input, so the displayed results no longer matched the inputs.
+The contract requires the screen to stay synchronized, so I added a single
+clearOutput() function called from every input handler.
+
+**Second fix:** Participant IDs and names weren't being trimmed. I trim on
+Evaluate rather than on keystroke — trimming in the input handler would
+stop the user typing spaces inside a name at all.
