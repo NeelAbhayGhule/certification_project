@@ -175,10 +175,24 @@ function renderResults(results) {
     const statusClass = result.eligible ? "eligible" : "ineligible";
     const statusLabel = result.eligible ? "Eligible" : "Ineligible";
 
-    const categoryTags = REQUIRED_CATEGORIES.map((category) => {
+    // Both the strip and the count are driven directly by
+    // result.categoriesCovered — the same derived set the failure reasons and
+    // the eligibility decision use. Nothing is recomputed here, so the strip
+    // can never contradict the reasons shown below it.
+    const filledCount = REQUIRED_CATEGORIES
+      .filter((category) => result.categoriesCovered.has(category)).length;
+
+    const progressSegments = REQUIRED_CATEGORIES.map((category) => {
       const covered = result.categoriesCovered.has(category);
-      return `<span class="category-tag${covered ? "" : " missing"}">${escapeHtml(category)}</span>`;
-    }).join(" ");
+      return `<div class="progress-segment ${covered ? "filled" : "empty"}">${escapeHtml(category)}</div>`;
+    }).join("");
+
+    const categoryProgress = `
+      <div class="category-progress">
+        <div class="progress-strip">${progressSegments}</div>
+        <span class="progress-count">${filledCount} / ${REQUIRED_CATEGORIES.length} categories</span>
+      </div>
+    `;
 
     const reasonsHtml = result.reasons.length > 0
       ? `<ul class="failure-reasons">${result.reasons.map((reason) => `<li>${escapeHtml(reason)}</li>`).join("")}</ul>`
@@ -191,7 +205,7 @@ function renderResults(results) {
           <span class="status-badge ${statusClass}">${statusLabel}</span>
         </div>
         <div class="result-detail"><span class="points">${result.totalPoints} pts</span> · needs ${PASS_MARK}+</div>
-        <div class="categories-covered">${categoryTags}</div>
+        ${categoryProgress}
         ${reasonsHtml}
       </div>
     `;
