@@ -12,7 +12,7 @@ const ACTIVITIES = [
   { id: "A04", name: "Open Source Clinic", category: "BUILD", points: 2 },
 ];
 // Required categories, in the exact order failure reasons must be listed.
-const CATEGORIES = ["LEARN", "BUILD", "SHARE"];
+const REQUIRED_CATEGORIES = ["LEARN", "BUILD", "SHARE"];
 
 // Minimum total points required for eligibility.
 const PASS_MARK = 6;

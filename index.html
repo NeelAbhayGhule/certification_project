@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>College Event Certificate Eligibility Board</title>
+<style>
+  :root {
+    --bg: #f4f6fb;
+    --card: #ffffff;
+    --border: #e1e5ee;
+    --text: #1f2937;
+    --muted: #6b7280;
+    --primary: #2f5fd6;
+    --primary-dark: #234bb0;
+    --eligible: #1a8a52;
+    --eligible-bg: #e8f7ee;
+    --ineligible: #b3431e;
+    --ineligible-bg: #fdf0e9;
+    --error-bg: #fdecec;
+    --error-border: #e3a2a2;
+    --error-text: #8a1f1f;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.4;
+  }
+
+  .page {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 32px 20px 60px;
+  }
+
+  header.page-header {
+    margin-bottom: 24px;
+  }
+
+  header.page-header h1 {
+    font-size: 24px;
+    margin: 0 0 4px;
+  }
+
+  header.page-header p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 22px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(16, 24, 40, 0.04);
+  }
+
+  .card h2 {
+    font-size: 16px;
+    margin: 0 0 12px;
+  }
+
+  .card h2 .hint {
+    font-weight: 400;
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+
+  th, td {
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  th {
+    color: var(--muted);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  .category-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    background: #eef1fb;
+    color: var(--primary-dark);
+  }
+
+  input[type="text"] {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--text);
+  }
+
+  input[type="text"]:focus {
+    outline: 2px solid var(--primary);
+    outline-offset: 1px;
+  }
+
+  td.col-id { width: 15%; }
+  td.col-name { width: 25%; }
+  td.col-activities { width: 60%; }
+
+  .actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+  }
+
+  button {
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 9px 18px;
+    border-radius: 7px;
+    border: 1px solid transparent;
+    cursor: pointer;
+  }
+
+  #evaluate-btn {
+    background: var(--primary);
+    color: #fff;
+  }
+
+  #evaluate-btn:hover { background: var(--primary-dark); }
+
+  #reset-btn {
+    background: #fff;
+    color: var(--text);
+    border-color: var(--border);
+  }
+
+  #reset-btn:hover { background: #f2f4f8; }
+
+  #error-area:empty, #summary-area:empty, #results-area:empty {
+    display: none;
+  }
+
+  .error-box {
+    background: var(--error-bg);
+    border: 1px solid var(--error-border);
+    color: var(--error-text);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+
+  .error-box h2 {
+    margin: 0 0 8px;
+    font-size: 14px;
+    color: var(--error-text);
+  }
+
+  .error-box ul {
+    margin: 0;
+    padding-left: 18px;
+  }
+
+  .error-box li {
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
+
+  .error-box code {
+    background: rgba(0,0,0,0.06);
+    padding: 1px 5px;
+    border-radius: 4px;
+  }
+
+  .summary-counts {
+    display: flex;
+    gap: 16px;
+  }
+
+  .summary-stat {
+    flex: 1;
+    border-radius: 8px;
+    padding: 14px 16px;
+    text-align: center;
+  }
+
+  .summary-stat .value {
+    font-size: 28px;
+    font-weight: 700;
+    display: block;
+  }
+
+  .summary-stat .label {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .summary-stat.eligible { background: var(--eligible-bg); }
+  .summary-stat.eligible .value { color: var(--eligible); }
+  .summary-stat.ineligible { background: var(--ineligible-bg); }
+  .summary-stat.ineligible .value { color: var(--ineligible); }
+
+  .result-card {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+  }
+
+  .result-card:last-child { margin-bottom: 0; }
+
+  .result-card.eligible { border-left: 4px solid var(--eligible); }
+  .result-card.ineligible { border-left: 4px solid var(--ineligible); }
+
+  .result-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .result-head .who {
+    font-weight: 600;
+    font-size: 15px;
+  }
+
+  .result-head .who .pid {
+    color: var(--muted);
+    font-weight: 400;
+    font-size: 13px;
+  }
+
+  .status-badge {
+    font-size: 12px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .status-badge.eligible { background: var(--eligible-bg); color: var(--eligible); }
+  .status-badge.ineligible { background: var(--ineligible-bg); color: var(--ineligible); }
+
+  .result-detail {
+    margin-top: 8px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .result-detail .points {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .categories-covered {
+    margin-top: 6px;
+  }
+
+  .categories-covered .category-tag.missing {
+    background: #f2f2f2;
+    color: #9ca3af;
+    text-decoration: line-through;
+  }
+
+  .failure-reasons {
+    margin: 8px 0 0;
+    padding-left: 18px;
+    font-size: 13px;
+    color: var(--ineligible);
+  }
+
+  .empty-note {
+    color: var(--muted);
+    font-size: 13px;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="page-header">
+    <h1>College Event Certificate Eligibility Board</h1>
+    <p>Review activity participation and evaluate certificate eligibility.</p>
+  </header>
+
+  <section class="card">
+    <h2>Activities <span class="hint">fixed reference table</span></h2>
+    <table id="activity-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Activity</th>
+          <th>Category</th>
+          <th>Points</th>
+        </tr>
+      </thead>
+      <tbody id="activity-tbody"></tbody>
+    </table>
+  </section>
+
+  <section class="card">
+    <h2>Participants <span class="hint">edit ID, name, or completed activities (comma-separated)</span></h2>
+    <table id="participant-table">
+      <thead>
+        <tr>
+          <th class="col-id">ID</th>
+          <th class="col-name">Name</th>
+          <th class="col-activities">Completed activity IDs</th>
+        </tr>
+      </thead>
+      <tbody id="participant-tbody"></tbody>
+    </table>
+    <div class="actions">
+      <button id="evaluate-btn" type="button">Evaluate</button>
+      <button id="reset-btn" type="button">Reset</button>
+    </div>
+  </section>
+
+  <section id="error-area"></section>
+
+  <section id="summary-area"></section>
+
+  <section id="results-area"></section>
+
+</div>
+
+<script src="data.js"></script>
+<script src="eligibility.js"></script>
+<script src="validation.js"></script>
+<script src="ui.js"></script>
+</body>
+</html>
